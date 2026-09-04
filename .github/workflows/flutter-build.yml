@@ -25,33 +25,19 @@ jobs:
         with:
           channel: 'stable'
 
-      # MENGKUTI SARAN ERROR: Buat project baru & pindahkan kode
-      - name: Rebuild Fresh Project Structure
-        run: |
-          # 1. Buat project super bersih
-          flutter create -t app clean_app --platforms=android --org com.hrdsystem.app
-          
-          # 2. Pindahkan semua hasil kerja keras Anda (kode, test, pubspec, .env) ke project baru
-          cp -r mobile_app/lib clean_app/
-          cp -r mobile_app/test clean_app/
-          cp mobile_app/pubspec.yaml clean_app/
-          cp mobile_app/.env clean_app/
-          
-          # 3. Buang folder lama yang error, dan jadikan folder baru sebagai yang utama
-          rm -rf mobile_app
-          mv clean_app mobile_app
-
-      # MENGATASI ERROR NOTIFIKASI DENGAN CARA YANG AMAN (AWK)
-      - name: Enable Core Library Desugaring (Safe Mode)
+      - name: Factory Reset Android Project
         working-directory: mobile_app
         run: |
-          # Menyuntikkan aturan desugaring dengan sangat aman tanpa merusak baris lain
-          awk '/compileOptions \{/ { print; print "        coreLibraryDesugaringEnabled true"; next }1' android/app/build.gradle > temp.gradle && mv temp.gradle android/app/build.gradle
+          # 1. Hapus folder android lama yang rusak atau tidak cocok
+          rm -rf android
           
-          echo "" >> android/app/build.gradle
-          echo "dependencies {" >> android/app/build.gradle
-          echo "    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'" >> android/app/build.gradle
-          echo "}" >> android/app/build.gradle
+          # 2. Buat ulang folder android yang 100% fresh menyesuaikan nama di pubspec.yaml
+          flutter create --platforms=android .
+          
+          # 3. SOLUSI JITU: Naikkan batas minimum Android ke versi 8.0 (API 26)
+          # Ini otomatis menonaktifkan kebutuhan "Desugaring" yang bikin error terus
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' android/app/build.gradle
+          sed -i 's/minSdkVersion 21/minSdkVersion 26/g' android/app/build.gradle
 
       - name: Get Dependencies
         working-directory: mobile_app
