@@ -25,20 +25,32 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Factory Reset & Fix MinSDK
+      - name: Factory Reset & Enable Desugaring Properly
         working-directory: mobile_app
         run: |
-          # 1. Hapus dan buat ulang folder android
           rm -rf android
           flutter create --platforms=android .
           
-          # 2. HANYA ubah minSdk menjadi 26 (tanpa menambah kode desugaring apapun)
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/g' android/app/build.gradle.kts
-          fi
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' android/app/build.gradle
-          fi
+          # 1. Set minSdk ke 26
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/g' android/app/build.gradle.kts
+          
+          # 2. Aktifkan isCoreLibraryDesugaringEnabled secara aman di dalam block compileOptions menggunakan Python/AWK agar tidak merusak format kts
+          python3 -c "
+          path = 'android/app/build.gradle.kts'
+          with open(path, 'r') as f:
+              content = f.read()
+          
+          # Tambahkan isCoreLibraryDesugaringEnabled = true di dalam compileOptions
+          target = 'compileOptions {'
+          replacement = 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true'
+          content = content.replace(target, replacement, 1)
+          
+          # Tambahkan dependencies coreLibraryDesugaring di bagian paling bawah
+          content += '\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.0.4\")\n}\n'
+          
+          with open(path, 'w') as f:
+              f.write(content)
+          "
 
       - name: Get Dependencies
         working-directory: mobile_app
