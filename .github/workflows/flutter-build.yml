@@ -25,32 +25,25 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Factory Reset & Enable Desugaring Properly
+      - name: Prepare Android Project & Force compileSdk 36
         working-directory: mobile_app
         run: |
           rm -rf android
           flutter create --platforms=android .
-          
-          # 1. Set minSdk ke 26
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/g' android/app/build.gradle.kts
-          
-          # 2. Aktifkan isCoreLibraryDesugaringEnabled secara aman di dalam block compileOptions menggunakan Python/AWK agar tidak merusak format kts
-          python3 -c "
-          path = 'android/app/build.gradle.kts'
-          with open(path, 'r') as f:
-              content = f.read()
-          
-          # Tambahkan isCoreLibraryDesugaringEnabled = true di dalam compileOptions
-          target = 'compileOptions {'
-          replacement = 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true'
-          content = content.replace(target, replacement, 1)
-          
-          # Tambahkan dependencies coreLibraryDesugaring di bagian paling bawah
-          content += '\ndependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.0.4\")\n}\n'
-          
-          with open(path, 'w') as f:
-              f.write(content)
-          "
+
+          # Pasang aturan subprojects agar semua modul/plugin (seperti file_picker) ikut dikompilasi dengan compileSdk 36
+          cat << 'SUBEOF' >> android/build.gradle.kts
+
+          subprojects {
+              afterEvaluate {
+                  if (plugins.hasPlugin("com.android.library") || plugins.hasPlugin("com.android.application")) {
+                      configure<com.android.build.gradle.BaseExtension> {
+                          compileSdkVersion(36)
+                      }
+                  }
+              }
+          }
+          SUBEOF
 
       - name: Get Dependencies
         working-directory: mobile_app
