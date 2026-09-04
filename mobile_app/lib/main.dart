@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app/routes/app_router.dart';
 import 'app/theme/light_theme.dart';
 import 'app/theme/dark_theme.dart';
