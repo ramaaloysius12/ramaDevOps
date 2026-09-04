@@ -28,16 +28,10 @@ jobs:
       - name: Factory Reset Android Project
         working-directory: mobile_app
         run: |
-          # 1. Hapus folder android lama yang rusak atau tidak cocok
           rm -rf android
-          
-          # 2. Buat ulang folder android yang 100% fresh menyesuaikan nama di pubspec.yaml
           flutter create --platforms=android .
-          
-          # 3. SOLUSI JITU: Naikkan batas minimum Android ke versi 8.0 (API 26)
-          # Ini otomatis menonaktifkan kebutuhan "Desugaring" yang bikin error terus
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/g' android/app/build.gradle
-          sed -i 's/minSdkVersion 21/minSdkVersion 26/g' android/app/build.gradle
+          # PERBAIKAN UTAMA: Targetkan file .kts dan ubah nilai minSdk
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/g' android/app/build.gradle.kts
 
       - name: Get Dependencies
         working-directory: mobile_app
