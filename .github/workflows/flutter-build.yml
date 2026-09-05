@@ -25,28 +25,26 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Factory Reset Android Project
+      - name: Konfigurasi Android & Desugaring
         working-directory: mobile_app
         run: |
+          # 1. Buat folder android bawaan pabrik Flutter
           rm -rf android
           flutter create --platforms=android .
-          # Naikin SDK khusus buat aplikasi lu aja (Aman)
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle.kts
+
+          # 2. Selesaikan masalah SDK untuk flutter_local_notifications (min 26) dan file_picker (compile 36)
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/g' android/app/build.gradle.kts
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle.kts
+
+          # 3. Selesaikan masalah Desugaring dengan sangat rapi (disisipkan tepat di bawah targetCompatibility)
+          sed -i '/targetCompatibility = JavaVersion.VERSION_1_8/a \        isCoreLibraryDesugaringEnabled = true' android/app/build.gradle.kts
+          
+          # 4. Tambahkan dependensi desugar di baris paling akhir file
+          echo 'dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") }' >> android/app/build.gradle.kts
 
       - name: Get Dependencies
         working-directory: mobile_app
         run: flutter pub get
-
-      - name: BRUTE-FORCE Plugins SDK (Solusi Fix)
-        run: |
-          # Hajar semua package yang didownload sama server GitHub agar pindah ke SDK 36 paksa!
-          # Cara ini murni meretas cache mesin tanpa ngerusak struktur folder kodingan lu
-          find /home/runner/.pub-cache -type f -name "build.gradle*" -exec sed -i 's/compileSdkVersion 3[0-9]/compileSdkVersion 36/g' {} +
-          find /home/runner/.pub-cache -type f -name "build.gradle*" -exec sed -i 's/compileSdkVersion(3[0-9])/compileSdkVersion(36)/g' {} +
-          find /home/runner/.pub-cache -type f -name "build.gradle*" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' {} +
-          find /home/runner/.pub-cache -type f -name "build.gradle*" -exec sed -i 's/compileSdk = 3[0-9]/compileSdk = 36/g' {} +
-          find /home/runner/.pub-cache -type f -name "build.gradle*" -exec sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' {} +
 
       - name: Analyze Code
         working-directory: mobile_app
